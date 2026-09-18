@@ -1,0 +1,25 @@
+*.pyc
+*.swp
+*.bak
+*.tmp
+*.DS_Store
+.vscode/
+*.bin
+*.elf
+*.hex
+
+# PlatformIO
+.pio/
+
+# LaTeX build artifacts
+*.aux
+*.log
+*.out
+*.toc
+*.lof
+*.lot
+*.bbl
+*.blg
+*.synctex.gz
+*.fls
+*.fdb_latexmk

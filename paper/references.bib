@@ -1,0 +1,242 @@
+% =====================================================================
+%  references.bib — shared by the review paper, the final paper and the
+%  project report.
+%
+%  VERIFICATION STATUS
+%  -------------------
+%  Entries are marked with a confidence note. Anything marked VERIFY must
+%  be checked against the actual publication before submission — do not
+%  submit a bibliography you have not personally opened.
+%
+%    [CONFIDENT] widely cited, details checked against memory of the venue
+%    [VERIFY]    plausible but the exact volume/pages/DOI need confirming
+%    [DOUBTFUL]  could not confirm this work exists in this form — find the
+%                real source or drop the claim it supports
+% =====================================================================
+
+% --------------------------------------------------------------- LoRa PHY
+@article{augustin2016lora,
+  author  = {Augustin, Aloÿs and Yi, Jiazi and Clausen, Thomas and Townsley, William Mark},
+  title   = {A Study of {LoRa}: Long Range and Low Power Networks for the {Internet of Things}},
+  journal = {Sensors},
+  volume  = {16},
+  number  = {9},
+  pages   = {1466},
+  year    = {2016},
+  doi     = {10.3390/s16091466},
+  note    = {[CONFIDENT] Foundational LoRa PHY characterisation, very widely cited.}
+}
+
+@techreport{semtech2013toa,
+  author      = {{Semtech Corporation}},
+  title       = {{AN1200.13}: {LoRa} Modem Designer's Guide},
+  institution = {Semtech},
+  year        = {2013},
+  note        = {[CONFIDENT] Source of the time-on-air equation used throughout.}
+}
+
+% ------------------------------------------------------- Mesh and routing
+@article{cotrim2020lorawan,
+  author  = {Cotrim, Jonathan Rodrigues and Kleinschmidt, João Henrique},
+  title   = {{LoRaWAN} Mesh Networks: A Review and Classification of Multihop Communication},
+  journal = {Sensors},
+  volume  = {20},
+  number  = {15},
+  pages   = {4163},
+  year    = {2020},
+  doi     = {10.3390/s20154163},
+  note    = {[CONFIDENT] The taxonomy this review's routing section is organised around.}
+}
+
+@article{sole2022loramesher,
+  author  = {Solé, Joan Miquel and Centelles, Roger Pueyo and Freitag, Felix and Meseguer, Roc},
+  title   = {Implementation of a {LoRa} Mesh Library},
+  journal = {IEEE Access},
+  volume  = {10},
+  pages   = {113158--113171},
+  year    = {2022},
+  doi     = {10.1109/ACCESS.2022.3217215},
+  note    = {[VERIFY] LoRaMesher is a real UPC project and the paper exists;
+             confirm the page range, which differs between sources.}
+}
+
+@article{centelles2024dsdv,
+  author  = {Centelles, Roger Pueyo and Solé, Joan Miquel and Freitag, Felix and Meseguer, Roc},
+  title   = {A Minimalistic Distance-Vector Routing Protocol for {LoRa} Mesh Networks},
+  journal = {IEEE Access},
+  volume  = {12},
+  year    = {2024},
+  doi     = {10.1109/ACCESS.2024.3458256},
+  note    = {[VERIFY] Same group as LoRaMesher, so plausible; confirm volume,
+             pages and DOI directly on IEEE Xplore.}
+}
+
+@inproceedings{perkins1994dsdv,
+  author    = {Perkins, Charles E. and Bhagwat, Pravin},
+  title     = {Highly Dynamic Destination-Sequenced Distance-Vector Routing ({DSDV})
+               for Mobile Computers},
+  booktitle = {Proc. ACM SIGCOMM},
+  pages     = {234--244},
+  year      = {1994},
+  doi       = {10.1145/190314.190336},
+  note      = {[CONFIDENT] The original DSDV paper. Cite this for the
+               sequence-number mechanism rather than a secondary source.}
+}
+
+@article{arregui2025gatewayfree,
+  author  = {Arregui Almeida, Danilo and others},
+  title   = {Gateway-Free {LoRa} Mesh on {ESP32}: Design, Self-Healing Mechanisms,
+             and Empirical Performance},
+  journal = {Sensors},
+  volume  = {25},
+  number  = {19},
+  pages   = {6036},
+  year    = {2025},
+  doi     = {10.3390/s25196036},
+  note    = {[VERIFY] This is the base implementation the capstone extends, so the
+             citation matters. Confirm the full author list — "and others" must be
+             replaced — and that the article number is correct.}
+}
+
+@inproceedings{liao2020concurrent,
+  author    = {Liao, Chun-Hao and Zhu, Guibing and Kuwabara, Daiki and Suzuki, Makoto
+               and Morikawa, Hiroyuki},
+  title     = {Multi-Hop {LoRa} Networks Enabled by Concurrent Transmission},
+  booktitle = {IEEE Access},
+  year      = {2017},
+  doi       = {10.1109/ACCESS.2017.2721META},
+  note      = {[DOUBTFUL] Your draft cites this as Liao et al., ICC 2020. A real
+               paper on LoRa concurrent transmission exists but the author list,
+               venue and year in the draft do not match anything I can confirm.
+               Find the actual paper before citing, or drop the claim.}
+}
+
+@techreport{udugampola2024subterranean,
+  author      = {Udugampola, N.},
+  title       = {A Position- and Energy-Aware Routing Strategy for Subterranean
+                 {LoRa} Mesh Networks},
+  institution = {[unverified]},
+  year        = {2024},
+  note        = {[DOUBTFUL] I could not confirm this work exists. Your draft pairs
+                 it with Bernal Bernabé and Skarmeta (Univ. Murcia, IoT security),
+                 which does not fit a UNSW subterranean-LoRa technical report. The
+                 185\% throughput and 75\% energy figures rest entirely on this
+                 source — do not use them until you have the paper in hand.}
+}
+
+% ------------------------------------------------------------- Security
+@inproceedings{aras2017exploring,
+  author    = {Aras, Emekcan and Ramachandran, Gowri Sankar and Lawrence, Piers
+               and Hughes, Danny},
+  title     = {Exploring the Security Vulnerabilities of {LoRa}},
+  booktitle = {Proc. 3rd IEEE Int. Conf. on Cybernetics (CYBCONF)},
+  address   = {Exeter, UK},
+  pages     = {1--6},
+  year      = {2017},
+  doi       = {10.1109/CYBConf.2017.7985777},
+  note      = {[CONFIDENT] The standard citation for practical SDR attacks on LoRa.}
+}
+
+@article{eldefrawy2019formal,
+  author  = {Eldefrawy, Mohamed and Butun, Ismail and Pereira, Nuno and Gidlund, Mikael},
+  title   = {Formal Security Analysis of {LoRaWAN}},
+  journal = {Computer Networks},
+  volume  = {148},
+  pages   = {328--339},
+  year    = {2019},
+  doi     = {10.1016/j.comnet.2018.11.017},
+  note    = {[CONFIDENT] ProVerif analysis of the LoRaWAN join procedure.}
+}
+
+@article{butun2018lorawan,
+  author  = {Butun, Ismail and Pereira, Nuno and Gidlund, Mikael},
+  title   = {Security Risk Analysis of {LoRaWAN} and Future Directions},
+  journal = {Future Internet},
+  volume  = {11},
+  number  = {1},
+  pages   = {3},
+  year    = {2019},
+  doi     = {10.3390/fi11010003},
+  note    = {[VERIFY] Plausible and the authors work in this area; confirm details.}
+}
+
+@article{abboud2024enhancing,
+  author  = {Abboud,ساندra and Abdoun, Nabil},
+  title   = {Enhancing {LoRaWAN} Security: An Advanced {AES}-Based Cryptographic Approach},
+  journal = {IEEE Access},
+  volume  = {12},
+  pages   = {2589--2606},
+  year    = {2024},
+  doi     = {10.1109/ACCESS.2023.3347688},
+  note    = {[VERIFY] The 2.3 ms overhead figure in your draft comes from here.
+             Confirm the paper and that figure before quoting it. Note the author
+             first name needs fixing — it was mangled in the source document.}
+}
+
+@article{aljabri2023lightweight,
+  author  = {AlJabri, Malak and others},
+  title   = {A Comprehensive Review of Lightweight Authenticated Encryption for
+             {IoT} Devices},
+  journal = {Wireless Communications and Mobile Computing},
+  year    = {2023},
+  note    = {[DOUBTFUL] Could not confirm. Also note that this journal was
+             discontinued by the publisher over research-integrity concerns, so
+             even if the paper exists a reviewer may question it. Prefer the NIST
+             lightweight-cryptography report below for the ASCON claim.}
+}
+
+@techreport{nist2023ascon,
+  author      = {Turan, Meltem Sönmez and McKay, Kerry and Chang, Donghoon and
+                 Kang, Jinkeon and Kelsey, John},
+  title       = {Status Report on the Final Round of the {NIST} Lightweight
+                 Cryptography Standardization Process},
+  institution = {National Institute of Standards and Technology},
+  number      = {NISTIR 8454},
+  year        = {2023},
+  doi         = {10.6028/NIST.IR.8454},
+  note        = {[CONFIDENT] Use this rather than a secondary survey when claiming
+                 ASCON was selected as the NIST lightweight standard.}
+}
+
+@techreport{dworkin2007gcm,
+  author      = {Dworkin, Morris},
+  title       = {Recommendation for Block Cipher Modes of Operation:
+                 {Galois/Counter Mode (GCM)} and {GMAC}},
+  institution = {National Institute of Standards and Technology},
+  number      = {SP 800-38D},
+  year        = {2007},
+  doi         = {10.6028/NIST.SP.800-38D},
+  note        = {[CONFIDENT] The normative source for the GCM nonce-uniqueness
+                 requirement. Cite this, not a survey, for that claim.}
+}
+
+@techreport{rfc7748,
+  author      = {Langley, Adam and Hamburg, Mike and Turner, Sean},
+  title       = {Elliptic Curves for Security},
+  institution = {IETF},
+  number      = {RFC 7748},
+  year        = {2016},
+  doi         = {10.17487/RFC7748},
+  note        = {[CONFIDENT] X25519 definition, including the low-order-point check.}
+}
+
+@techreport{rfc5869,
+  author      = {Krawczyk, Hugo and Eronen, Pasi},
+  title       = {{HMAC}-based Extract-and-Expand Key Derivation Function ({HKDF})},
+  institution = {IETF},
+  number      = {RFC 5869},
+  year        = {2010},
+  doi         = {10.17487/RFC5869},
+  note        = {[CONFIDENT] HKDF, with the test vectors used to validate the
+                 implementation.}
+}
+
+@techreport{prisma2021,
+  author  = {Page, Matthew J. and McKenzie, Joanne E. and Bossuyt, Patrick M. and others},
+  title   = {The {PRISMA} 2020 Statement: An Updated Guideline for Reporting
+             Systematic Reviews},
+  institution = {BMJ},
+  year    = {2021},
+  doi     = {10.1136/bmj.n71},
+  note    = {[CONFIDENT] Cite this for the review methodology itself.}
+}

@@ -1,0 +1,759 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f1720">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon-192.png">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<title>LoRa Mesh Messenger</title>
+<style>
+  :root {
+    --bg: #0f1720;
+    --panel: #172230;
+    --panel-2: #1e2c3d;
+    --line: #2a3b50;
+    --text: #e6edf5;
+    --muted: #8ea3bb;
+    --accent: #4da3ff;
+    --ok: #45c98a;
+    --warn: #e8b64c;
+    --bad: #f06a6a;
+    --mine: #275a8f;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; height: 100%;
+    background: var(--bg); color: var(--text);
+    font: 15px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    overscroll-behavior: none;
+  }
+  body { display: flex; flex-direction: column; }
+
+  header {
+    padding: 10px 14px; background: var(--panel);
+    border-bottom: 1px solid var(--line);
+    display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+  }
+  header h1 { font-size: 16px; margin: 0; font-weight: 600; flex: 1; }
+  #status { font-size: 12px; color: var(--muted); }
+  #status.on { color: var(--ok); }
+  #status.err { color: var(--bad); }
+
+  button {
+    font: inherit; font-size: 14px; color: var(--text);
+    background: var(--panel-2); border: 1px solid var(--line);
+    border-radius: 8px; padding: 8px 12px; cursor: pointer;
+  }
+  button:active { background: var(--line); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #06121f; font-weight: 600; }
+  button:disabled { opacity: .45; cursor: default; }
+
+  nav { display: flex; background: var(--panel); border-bottom: 1px solid var(--line); flex-shrink: 0; }
+  nav button {
+    flex: 1; border: 0; border-radius: 0; background: transparent;
+    color: var(--muted); padding: 11px 4px; font-size: 13px;
+    border-bottom: 2px solid transparent;
+  }
+  nav button.active { color: var(--text); border-bottom-color: var(--accent); }
+
+  main { flex: 1; overflow: hidden; display: flex; }
+  section { flex: 1; display: none; flex-direction: column; overflow: hidden; }
+  section.active { display: flex; }
+
+  /* Chat */
+  #peerBar {
+    padding: 8px 12px; background: var(--panel-2);
+    border-bottom: 1px solid var(--line); display: flex; gap: 8px; align-items: center;
+    flex-shrink: 0;
+  }
+  #peerBar select { flex: 1; font: inherit; padding: 7px; border-radius: 7px;
+    background: var(--panel); color: var(--text); border: 1px solid var(--line); }
+  #log { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .msg { max-width: 82%; padding: 8px 11px; border-radius: 12px; background: var(--panel-2); word-wrap: break-word; }
+  .msg.mine { align-self: flex-end; background: var(--mine); }
+  .msg .who { font-size: 11px; color: var(--muted); margin-bottom: 2px; }
+  .msg .state { font-size: 11px; color: var(--muted); margin-top: 3px; }
+  .msg .state.done { color: var(--ok); }
+  .msg.sys { align-self: center; background: transparent; color: var(--muted); font-size: 12px; text-align: center; max-width: 95%; }
+  .msg.sys.bad { color: var(--bad); }
+  .msg.alert { border-left: 3px solid var(--warn); }
+  .msg.alert:not(.mine) { background: #3a2f16; }
+  .loc { margin-top: 6px; padding: 8px 10px; border-radius: 8px;
+    background: rgba(0,0,0,.28); font-size: 13px; }
+  .loc .coords { font-family: ui-monospace, Menlo, Consolas, monospace; }
+  .loc .meta { color: var(--muted); font-size: 12px; margin-top: 2px; }
+  .loc a { color: var(--accent); text-decoration: none; display: inline-block; margin-top: 6px; }
+  button.danger { background: var(--warn); border-color: var(--warn); color: #1a1205; font-weight: 600; }
+
+  #composer { display: flex; gap: 8px; padding: 10px; border-top: 1px solid var(--line);
+    background: var(--panel); flex-shrink: 0; padding-bottom: max(10px, env(safe-area-inset-bottom)); }
+  #composer input { flex: 1; font: inherit; padding: 10px; border-radius: 9px;
+    background: var(--panel-2); color: var(--text); border: 1px solid var(--line); min-width: 0; }
+  #count { position: absolute; }
+
+  /* Peers */
+  #peers { flex: 1; overflow-y: auto; padding: 10px; }
+  .peer { background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px;
+    padding: 11px 13px; margin-bottom: 9px; display: flex; align-items: center; gap: 12px; }
+  .peer .id { flex: 1; }
+  .peer .nm { font-weight: 600; }
+  .peer .sub { font-size: 12px; color: var(--muted); }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--warn); flex-shrink: 0; }
+  .dot.secure { background: var(--ok); }
+
+  /* Diagnostics */
+  #diagBtns { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px; border-bottom: 1px solid var(--line); flex-shrink: 0; }
+  #diag { flex: 1; overflow: auto; margin: 0; padding: 12px;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 12px;
+    white-space: pre; color: var(--muted); }
+
+  .hint { padding: 14px; color: var(--muted); font-size: 13px; }
+  .hint code { background: var(--panel-2); padding: 1px 5px; border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>LoRa Mesh</h1>
+  <span id="status">offline</span>
+  <button id="connect" class="primary">Connect</button>
+</header>
+
+<nav>
+  <button data-tab="chat" class="active">Chat</button>
+  <button data-tab="peersTab">Nodes</button>
+  <button data-tab="diagTab">Diagnostics</button>
+</nav>
+
+<main>
+  <section id="chat" class="active">
+    <div id="peerBar">
+      <select id="peerSelect" aria-label="Choose a node to message">
+        <option value="">— select a node —</option>
+        <option value="ALL">📢 Everyone (broadcast alert)</option>
+      </select>
+      <button id="refreshPeers">↻</button>
+    </div>
+    <div id="log"></div>
+    <div id="composer">
+      <button id="locate" title="Share my location" disabled>📍</button>
+      <input id="text" placeholder="Message (max 200)" maxlength="200" disabled>
+      <button id="send" disabled>Send</button>
+    </div>
+  </section>
+
+  <section id="peersTab">
+    <div id="peers"></div>
+    <div class="hint" id="peersHint">
+      Nodes appear as beacons arrive. A green dot means an encrypted session has been
+      agreed; amber means the key exchange is still in progress.
+    </div>
+  </section>
+
+  <section id="diagTab">
+    <div id="diagBtns">
+      <button data-cmd="/stats">Stats</button>
+      <button data-cmd="/routes">Routes</button>
+      <button data-cmd="/nodes">Neighbours</button>
+      <button data-cmd="/keys">Sessions</button>
+      <button data-cmd="/id">Identity</button>
+      <button data-cmd="/hello">Send beacon</button>
+      <button id="rename">Rename…</button>
+    </div>
+    <pre id="diag">Connect to a node, then choose a report.</pre>
+  </section>
+</main>
+
+<script>
+const SERVICE = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
+const CHAR_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e'; // phone -> node
+const CHAR_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e'; // node -> phone
+
+let device = null, rxChar = null, txChar = null;
+let selfId = null, selfName = null;
+const peers = new Map();          // id -> {name, hops, rssi, secure}
+const threads = new Map();        // id -> [{mine, text, state, msgId}]
+const pending = new Map();        // msgId -> message object awaiting delivery
+let current = '';
+let rxBuffer = '';
+
+const $ = id => document.getElementById(id);
+const enc = new TextEncoder();
+
+/* ------------------------------------------------------------ storage */
+/* Conversations survive closing the app. Without this a reload loses every
+   message, which for something people carry into the field is unusable.
+   Every access is guarded: private windows and cleared site data make these
+   throw, and losing history must never take the app down with it. */
+const STORE_KEY = 'loramesh.v1';
+const MAX_STORED_PER_THREAD = 200;
+
+function saveState() {
+  try {
+    const threadsOut = {};
+    for (const [id, list] of threads) {
+      /* Keep the tail: old messages matter less than a working app. */
+      threadsOut[id] = list.slice(-MAX_STORED_PER_THREAD)
+        .map(m => ({ mine: m.mine, text: m.text, state: m.state,
+                     msgId: m.msgId, from: m.from, alert: m.alert }));
+    }
+    const namesOut = {};
+    for (const [id, p] of peers) namesOut[id] = p.name;
+    localStorage.setItem(STORE_KEY, JSON.stringify({ threads: threadsOut, names: namesOut }));
+  } catch (e) { /* storage unavailable or full - carry on in memory */ }
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    for (const [id, list] of Object.entries(data.threads || {})) {
+      threads.set(id, list);
+    }
+    for (const [id, name] of Object.entries(data.names || {})) {
+      /* Names only: hop count, signal and session state are live facts and
+         would be misleading if restored from a previous session. */
+      peers.set(id, { name, hops: 0, rssi: 0, secure: false, battery: 0, stale: true });
+    }
+    renderPeerSelect();
+  } catch (e) { /* corrupt or unreadable - start clean rather than fail */ }
+}
+
+/* ---------------------------------------------------------------- tabs */
+document.querySelectorAll('nav button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('nav button').forEach(x => x.classList.remove('active'));
+  document.querySelectorAll('section').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  $(b.dataset.tab).classList.add('active');
+});
+
+/* ------------------------------------------------------------ connect */
+$('connect').onclick = async () => {
+  /* A deliberate disconnect must not trigger the reconnect logic. */
+  if (device && device.gatt.connected) {
+    deliberateDisconnect = true;
+    cancelReconnect();
+    device.gatt.disconnect();
+    return;
+  }
+  deliberateDisconnect = false;
+  cancelReconnect();
+
+  if (!navigator.bluetooth) {
+    setStatus('Web Bluetooth unavailable', true);
+    sys('This browser has no Web Bluetooth. Use Chrome on Android, or Bluefy on iOS.', true);
+    return;
+  }
+  try {
+    setStatus('scanning…');
+    device = await navigator.bluetooth.requestDevice({
+      filters: [{ namePrefix: 'LoRaMesh-' }],
+      optionalServices: [SERVICE]
+    });
+    device.addEventListener('gattserverdisconnected', onDisconnect);
+
+    setStatus('connecting…');
+    await attach(await device.gatt.connect());
+  } catch (e) {
+    if (e && e.name === 'NotFoundError') { setStatus('offline'); return; }
+    setStatus('connection failed', true);
+    sys('Could not connect: ' + (e && e.message ? e.message : e), true);
+  }
+};
+
+/* Wires up the characteristics and the UI. Shared by the first connect and by
+   every reconnect, so the two can never drift apart. */
+async function attach(server) {
+  const service = await server.getPrimaryService(SERVICE);
+  rxChar = await service.getCharacteristic(CHAR_RX);
+  txChar = await service.getCharacteristic(CHAR_TX);
+
+  await txChar.startNotifications();
+  txChar.addEventListener('characteristicvaluechanged', onNotify);
+
+  cancelReconnect();
+  setStatus(device.name || 'connected', false, true);
+  $('connect').textContent = 'Disconnect';
+  $('text').disabled = false;
+  $('send').disabled = false;
+  $('locate').disabled = false;
+
+  await send('/id');
+  await send('/peers');
+}
+
+/* Reconnect attempts, backing off so a node that is genuinely out of range
+   does not drain the phone retrying every second. Reset on a real connect
+   and on any deliberate disconnect. */
+let reconnectTimer = null, reconnectTries = 0, deliberateDisconnect = false;
+const RECONNECT_MAX = 6;
+
+function cancelReconnect() {
+  clearTimeout(reconnectTimer);
+  reconnectTimer = null;
+  reconnectTries = 0;
+}
+
+/* Losing BLE is routine when a phone drifts away from a node — that is the
+   normal field condition, not an error — so the app climbs back on its own
+   rather than waiting to be tapped. */
+function scheduleReconnect() {
+  if (!device || reconnectTries >= RECONNECT_MAX) {
+    if (device) sys('Could not get back to the node. Tap Connect to retry.', true);
+    return;
+  }
+  const wait = Math.min(1000 * 2 ** reconnectTries, 30000);
+  reconnectTries++;
+  setStatus(`reconnecting in ${Math.round(wait / 1000)}s…`);
+  reconnectTimer = setTimeout(async () => {
+    try {
+      const server = await device.gatt.connect();
+      await attach(server);
+      sys('Reconnected.');
+    } catch (e) {
+      scheduleReconnect();
+    }
+  }, wait);
+}
+
+function onDisconnect() {
+  setStatus('offline');
+  $('connect').textContent = 'Connect';
+  $('text').disabled = true;
+  $('send').disabled = true;
+  $('locate').disabled = true;
+  rxChar = txChar = null;
+  if (deliberateDisconnect) {
+    deliberateDisconnect = false;
+    sys('Disconnected.');
+    return;
+  }
+  sys('Lost the node — trying to reconnect.');
+  scheduleReconnect();
+}
+
+function setStatus(text, bad, ok) {
+  const el = $('status');
+  el.textContent = text;
+  el.className = bad ? 'err' : (ok ? 'on' : '');
+}
+
+/* --------------------------------------------------------------- send */
+/* Returns whether the line actually went out. Failures are handled here
+   rather than at the call sites: a GATT write rejects whenever the link has
+   dropped without the disconnect event having landed yet, and several callers
+   are fire-and-forget timers whose rejection nobody would ever see. */
+async function send(line) {
+  if (!rxChar) return false;
+  const bytes = enc.encode(line + '\n');
+  /* Chunked because the negotiated MTU is not visible from here; the node
+     reassembles on the newline. */
+  try {
+    for (let i = 0; i < bytes.length; i += 180) {
+      const slice = bytes.slice(i, i + 180);
+      if (rxChar.writeValueWithoutResponse) await rxChar.writeValueWithoutResponse(slice);
+      else await rxChar.writeValue(slice);
+    }
+    return true;
+  } catch (e) {
+    sys('Lost the link to the node — reconnect and try again.', true);
+    return false;
+  }
+}
+
+/* ------------------------------------------------------------- receive */
+function onNotify(event) {
+  rxBuffer += new TextDecoder().decode(event.target.value);
+  let index;
+  while ((index = rxBuffer.indexOf('\n')) >= 0) {
+    const line = rxBuffer.slice(0, index).trim();
+    rxBuffer = rxBuffer.slice(index + 1);
+    if (line) handleLine(line);
+  }
+}
+
+function handleLine(line) {
+  let m;
+
+  if ((m = line.match(/^MSG (\d+) (\S*): ([\s\S]*)$/))) {
+    const id = m[1];
+    if (m[2] && m[2] !== '?') touchPeer(id, { name: m[2] });
+    addMessage(id, { mine: false, text: m[3] });
+    if (!current) selectPeer(id);
+    return;
+  }
+
+  if ((m = line.match(/^BCAST (\d+) (\S*): ([\s\S]*)$/))) {
+    const id = m[1];
+    if (m[2] && m[2] !== '?') touchPeer(id, { name: m[2] });
+    const who = (m[2] && m[2] !== '?') ? m[2] : 'Node ' + id;
+    addMessage('ALL', { mine: false, text: m[3], from: who, alert: true });
+    if (current !== 'ALL') sys('📢 Alert from ' + who + ' — see Everyone');
+    return;
+  }
+
+  if ((m = line.match(/^BCASTQUEUED (\d+)$/))) {
+    const list = threads.get('ALL') || [];
+    const last = [...list].reverse().find(x => x.mine && !x.msgId);
+    if (last) { last.msgId = m[1]; last.state = 'sent'; }
+    render();
+    return;
+  }
+
+  if ((m = line.match(/^QUEUED (\d+) (\d+)$/))) {
+    const [, msgId, dest] = m;
+    const list = threads.get(dest) || [];
+    const last = [...list].reverse().find(x => x.mine && !x.msgId);
+    if (last) { last.msgId = msgId; last.state = 'sent'; pending.set(msgId, last); }
+    render();
+    return;
+  }
+
+  if ((m = line.match(/^DELIVERED (\d+) (\d+)$/))) {
+    const msg = pending.get(m[1]);
+    if (msg) { msg.state = 'delivered'; pending.delete(m[1]); saveState(); render(); }
+    return;
+  }
+
+  /* The recipient is unreachable, so the node is holding the message rather
+     than dropping it. Show it as waiting, not failed. */
+  if ((m = line.match(/^HELD (\d+) (\d+)$/))) {
+    const msg = pending.get(m[1]) || [...(threads.get(m[2]) || [])].reverse()
+      .find(x => x.mine && x.msgId === m[1]);
+    if (msg) { msg.state = 'held'; saveState(); render(); }
+    sys('Recipient is offline — the node is holding this message and will deliver it.');
+    return;
+  }
+
+  if ((m = line.match(/^EXPIRED (\d+) (\d+)$/))) {
+    const msg = pending.get(m[1]);
+    if (msg) { msg.state = 'expired'; pending.delete(m[1]); saveState(); render(); }
+    sys('Gave up on an undelivered message — the recipient never came back.', true);
+    return;
+  }
+
+  if ((m = line.match(/^PEER (\d+) (\S+) (\d+) (-?\d+) ([01])(?: (\d+))?$/))) {
+    touchPeer(m[1], { name: m[2], hops: +m[3], rssi: +m[4], secure: m[5] === '1',
+                      battery: m[6] ? +m[6] : 0, stale: false });
+    renderPeers();
+    return;
+  }
+
+  if ((m = line.match(/^ID (\d+) (.*)$/))) {
+    selfId = m[1]; selfName = m[2];
+    $('status').textContent = (selfName || 'node') + ' · ' + selfId;
+    return;
+  }
+
+  if (line.startsWith('SEC ')) { sys('Security: ' + line.slice(4), true); appendDiag(line); return; }
+
+  if (line.startsWith('ERR ')) {
+    /* A first message to a distant peer fails while its key is fetched. The
+       exchange takes a few seconds, so retry once rather than making the user
+       resend. */
+    if (/no session/i.test(line)) {
+      const waiting = [...(threads.get(current) || [])].reverse()
+        .find(x => x.mine && !x.msgId && !x.retried);
+      if (waiting) {
+        waiting.retried = true;
+        waiting.state = 'agreeing key';
+        render();
+        sys('Agreeing an encryption key with this node…');
+        setTimeout(() => send(current + ':' + waiting.text), 6000);
+        return;
+      }
+    }
+    sys(line.slice(4), true);
+    return;
+  }
+  if (line.startsWith('ACK ')) return;   // hop-level, not interesting to a user
+  if (line === 'PEERS none') { peers.clear(); renderPeers(); return; }
+
+  appendDiag(line);
+}
+
+function touchPeer(id, fields) {
+  const existing = peers.get(id) || { name: '?', hops: 0, rssi: 0, secure: false };
+  peers.set(id, Object.assign(existing, fields));
+  renderPeerSelect();
+}
+
+/* --------------------------------------------------------------- chat */
+function addMessage(peerId, msg) {
+  if (!threads.has(peerId)) threads.set(peerId, []);
+  threads.get(peerId).push(msg);
+  saveState();
+  if (peerId === current) render();
+  else renderPeerSelect();
+}
+
+function selectPeer(id) {
+  current = id;
+  $('peerSelect').value = id;
+  render();
+}
+
+$('peerSelect').onchange = e => selectPeer(e.target.value);
+$('refreshPeers').onclick = () => send('/peers');
+
+$('send').onclick = doSend;
+$('text').addEventListener('keydown', e => { if (e.key === 'Enter') doSend(); });
+
+async function doSend() {
+  const text = $('text').value.trim();
+  if (!text) return;
+  if (!current) { sys('Choose a node to message first.', true); return; }
+
+  if (current === 'ALL') {
+    if (!confirm('Send this as an alert to every node in the mesh?\n\n' + text)) return;
+    addMessage('ALL', { mine: true, text, state: 'queued', alert: true });
+    $('text').value = '';
+    await send('/all ' + text);
+    return;
+  }
+
+  addMessage(current, { mine: true, text, state: 'queued' });
+  $('text').value = '';
+  await send(current + ':' + text);
+}
+
+/* ----------------------------------------------------------- location */
+/* The node has no GPS chip; the phone does, and it is already the user
+   interface. A position therefore travels as an ordinary encrypted message
+   with a known prefix - it needs no firmware support and inherits the same
+   end-to-end encryption as any other message. */
+const LOC_PREFIX = '!loc:';
+let myPosition = null;
+
+function parseLocation(text) {
+  if (!text.startsWith(LOC_PREFIX)) return null;
+  const parts = text.slice(LOC_PREFIX.length).split(',');
+  const lat = parseFloat(parts[0]), lon = parseFloat(parts[1]);
+  if (!isFinite(lat) || !isFinite(lon)) return null;
+  if (lat < -90 || lat > 90 || lon < -180 || lon > 180) return null;
+  const accuracy = parseFloat(parts[2]);
+  return { lat, lon, accuracy: isFinite(accuracy) ? accuracy : null };
+}
+
+/* Haversine, so a reader can see how far away the sender is without a map. */
+function distanceMetres(a, b) {
+  const R = 6371000, toRad = d => d * Math.PI / 180;
+  const dLat = toRad(b.lat - a.lat), dLon = toRad(b.lon - a.lon);
+  const h = Math.sin(dLat / 2) ** 2
+          + Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLon / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+function formatDistance(m) {
+  return m < 1000 ? `${Math.round(m)} m away` : `${(m / 1000).toFixed(2)} km away`;
+}
+
+function buildLocationCard(loc) {
+  const box = document.createElement('div');
+  box.className = 'loc';
+
+  const coords = document.createElement('div');
+  coords.className = 'coords';
+  coords.textContent = `${loc.lat.toFixed(5)}, ${loc.lon.toFixed(5)}`;
+  box.appendChild(coords);
+
+  const meta = document.createElement('div');
+  meta.className = 'meta';
+  const bits = [];
+  if (loc.accuracy != null) bits.push(`±${Math.round(loc.accuracy)} m`);
+  if (myPosition) bits.push(formatDistance(distanceMetres(myPosition, loc)));
+  meta.textContent = bits.join(' · ') || 'position received';
+  box.appendChild(meta);
+
+  /* geo: hands off to the phone's map app, which works from cached maps with
+     no connectivity. */
+  const link = document.createElement('a');
+  link.href = `geo:${loc.lat},${loc.lon}?q=${loc.lat},${loc.lon}(Mesh%20node)`;
+  link.textContent = 'Open in Maps →';
+  box.appendChild(link);
+  return box;
+}
+
+function currentPosition() {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) { reject(new Error('no geolocation in this browser')); return; }
+    navigator.geolocation.getCurrentPosition(
+      p => resolve({ lat: p.coords.latitude, lon: p.coords.longitude,
+                     accuracy: p.coords.accuracy }),
+      e => reject(e),
+      { enableHighAccuracy: true, timeout: 20000, maximumAge: 15000 });
+  });
+}
+
+$('locate').onclick = async () => {
+  if (!current) { sys('Choose a node, or Everyone, before sharing a location.', true); return; }
+  sys('Getting a GPS fix…');
+  try {
+    const p = await currentPosition();
+    myPosition = p;
+    const payload = `${LOC_PREFIX}${p.lat.toFixed(5)},${p.lon.toFixed(5)},${Math.round(p.accuracy)}`;
+    const broadcast = current === 'ALL';
+    addMessage(current, { mine: true, text: payload, state: 'queued',
+                          alert: broadcast, loc: p });
+    await send(broadcast ? '/all ' + payload : current + ':' + payload);
+  } catch (e) {
+    /* A cold GPS fix indoors can simply fail; say so rather than hanging. */
+    sys('Could not get a location: ' + (e && e.message ? e.message : e), true);
+  }
+};
+
+function sys(text, bad) {
+  const div = document.createElement('div');
+  div.className = 'msg sys' + (bad ? ' bad' : '');
+  div.textContent = text;
+  $('log').appendChild(div);
+  $('log').scrollTop = $('log').scrollHeight;
+}
+
+function render() {
+  const log = $('log');
+  log.innerHTML = '';
+  const broadcast = current === 'ALL';
+
+  $('text').placeholder = broadcast ? 'Alert to every node (max 200)' : 'Message (max 200)';
+  $('send').textContent = broadcast ? 'Alert' : 'Send';
+  $('send').classList.toggle('danger', broadcast);
+
+  const list = threads.get(current) || [];
+  if (!list.length) {
+    sys(broadcast
+        ? 'Broadcast alerts reach every node in the mesh. Readable by any mesh member, and by nobody outside it.'
+        : current ? 'No messages yet with this node.' : 'Connect, then pick a node above.');
+    return;
+  }
+
+  const peerName = (peers.get(current) || {}).name || current;
+  for (const m of list) {
+    const div = document.createElement('div');
+    div.className = 'msg' + (m.mine ? ' mine' : '') + (m.alert ? ' alert' : '');
+    const who = document.createElement('div');
+    who.className = 'who';
+    who.textContent = m.mine ? (broadcast ? 'You → everyone' : 'You')
+                             : (m.from || peerName);
+    div.append(who);
+
+    const loc = m.loc || parseLocation(m.text);
+    if (loc) {
+      const label = document.createElement('div');
+      label.textContent = m.mine ? '📍 Shared my location' : '📍 Location';
+      div.append(label, buildLocationCard(loc));
+    } else {
+      const body = document.createElement('div');
+      body.textContent = m.text;
+      div.append(body);
+    }
+    if (m.mine) {
+      const state = document.createElement('div');
+      state.className = 'state' + (m.state === 'delivered' ? ' done' : '');
+      /*  A broadcast is never acknowledged by anyone in particular, so there
+          is no delivery tick to wait for. */
+      state.textContent = broadcast
+        ? (m.state === 'queued' ? '· queued' : '📢 sent to all')
+        : m.state === 'delivered' ? '✓✓ delivered'
+        : m.state === 'held' ? '⏳ waiting for recipient'
+        : m.state === 'expired' ? '✕ undelivered'
+        : m.state === 'sent' ? '✓ sent' : '· queued';
+      div.append(state);
+    }
+    log.appendChild(div);
+  }
+  log.scrollTop = log.scrollHeight;
+}
+
+function renderPeerSelect() {
+  const select = $('peerSelect');
+  const keep = select.value;
+  select.innerHTML = '<option value="">— select a node —</option>'
+                   + '<option value="ALL">📢 Everyone (broadcast alert)</option>';
+  for (const [id, p] of peers) {
+    const option = document.createElement('option');
+    option.value = id;
+    option.textContent = (p.name && p.name !== '?' ? p.name : 'Node ' + id) + ' · ' + id;
+    select.appendChild(option);
+  }
+  select.value = keep || current || '';
+}
+
+function renderPeers() {
+  const box = $('peers');
+  box.innerHTML = '';
+  if (!peers.size) { $('peersHint').style.display = ''; return; }
+  $('peersHint').style.display = '';
+  for (const [id, p] of peers) {
+    const row = document.createElement('div');
+    row.className = 'peer';
+    const dot = document.createElement('div');
+    dot.className = 'dot' + (p.secure ? ' secure' : '');
+    const info = document.createElement('div');
+    info.className = 'id';
+    const nm = document.createElement('div');
+    nm.className = 'nm';
+    nm.textContent = p.name && p.name !== '?' ? p.name : 'Node ' + id;
+    const sub = document.createElement('div');
+    sub.className = 'sub';
+    if (p.stale) {
+      sub.textContent = `${id} · not heard from yet this session`;
+    } else {
+      sub.textContent = `${id} · ${p.hops} hop${p.hops === 1 ? '' : 's'}`
+                      + (p.rssi ? ` · ${p.rssi} dBm` : '')
+                      + (p.battery ? ` · 🔋${p.battery}%` : '')
+                      + (p.secure ? ' · encrypted' : ' · agreeing key');
+    }
+    info.append(nm, sub);
+    const go = document.createElement('button');
+    go.textContent = 'Message';
+    go.onclick = () => {
+      selectPeer(id);
+      document.querySelector('nav button[data-tab="chat"]').click();
+    };
+    row.append(dot, info, go);
+    box.appendChild(row);
+  }
+  renderPeerSelect();
+}
+
+/* -------------------------------------------------------- diagnostics */
+document.querySelectorAll('#diagBtns button[data-cmd]').forEach(b => {
+  b.onclick = () => { $('diag').textContent = ''; send(b.dataset.cmd); };
+});
+
+$('rename').onclick = async () => {
+  const name = prompt('Name for this node (max 15 characters)', selfName || '');
+  if (name === null) return;
+  await send('/name ' + name.slice(0, 15));
+  await send('/id');
+};
+
+function appendDiag(line) {
+  const pre = $('diag');
+  pre.textContent += line + '\n';
+  pre.scrollTop = pre.scrollHeight;
+}
+
+/* Keep the node list fresh while connected. */
+setInterval(() => { if (rxChar) send('/peers'); }, 20000);
+
+/* Offline support: nodes get deployed where there is no coverage, so the app
+   caches itself on first load and runs from the home screen thereafter. */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {
+      /* Registration needs HTTPS; failing here just means no offline cache. */
+    });
+  });
+}
+
+loadState();
+render();
+</script>
+</body>
+</html>
