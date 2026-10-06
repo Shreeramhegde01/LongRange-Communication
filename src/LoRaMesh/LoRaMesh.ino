@@ -3,9 +3,10 @@
   ------------------------------------------------------------------------------
   Long-Range Secure Messaging System using ESP32 and LoRa.
 
-  Entry point for a mesh node built on the Heltec Wireless Stick Lite V3
-  (ESP32-S3 + SX1262). The node has no display: a phone paired over BLE is the
-  user interface, and the serial console mirrors it for lab work.
+  Entry point for a mesh node built on the Heltec WiFi LoRa 32 V3
+  (ESP32-S3 + SX1262). A phone paired over BLE is the user interface and the
+  serial console mirrors it for lab work; the board's 128x64 OLED carries
+  local diagnostics only.
 
     phone --BLE--> node --LoRa mesh--> ... --> node --BLE--> phone
 

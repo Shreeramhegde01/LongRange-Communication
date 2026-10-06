@@ -85,7 +85,8 @@ have that dependency.
 Five nodes, each an ESP32-S3 paired with an SX1262 radio, form a mesh in which
 every device sends, relays and receives. There is no central node and no
 coordinator. A phone connects to any device over Bluetooth Low Energy and acts as
-the keyboard and screen, so the hardware carries no display. Routing uses a
+the keyboard and screen, while the node's own display carries local
+diagnostics. Routing uses a
 destination-sequenced distance-vector protocol whose updates travel inside the
 neighbour-discovery beacon, so routing costs the network no transmissions of its
 own; the beacon interval widens as a node learns of more nodes, which keeps
@@ -378,7 +379,7 @@ it as satisfied would be false.
 \toprule
 Item & Specification \\
 \midrule
-Node board & Heltec Wireless Stick Lite V3 \\
+Node board & Heltec WiFi LoRa 32 V3 \\
 Microcontroller & ESP32-S3FN8, dual core, 8\,MB flash \\
 Radio & Semtech SX1262 \\
 Band & 865--867\,MHz \\
@@ -392,17 +393,25 @@ User device & Android phone with Bluetooth Low Energy \\
 \label{tab:hw}
 \end{table}
 
-The board was chosen without a display. An OLED costs money, draws current and
-occupies pins, and the phone application makes it redundant, since the phone is a
-larger and better screen that the user is already carrying. The one thing a
-display would give is diagnostics when no phone is attached, and the serial
-console covers that during development.
+The decision about the display changed during the project, and the reason is
+worth recording. We first specified a display-less board, on the grounds that
+an OLED costs money, draws current, and is redundant when the phone is a
+larger and better screen that the user already carries. That variant turned
+out not to be sold in India in the 863--870\,MHz band; only a 470\,MHz version
+is stocked, which is useless here. The board with the display is available, so
+it is what we bought. Having paid for it we use it: the node shows link
+quality and its own state locally, which is genuinely useful during range
+trials, when one walks away from a node with no phone attached. The phone
+remains the interface for messaging. A second build target with the panel left
+undriven is kept so that the display's power cost can be measured rather than
+guessed.
 
 \section{Software requirements}
 
 PlatformIO with the Arduino-ESP32 core; RadioLib for the SX1262; mbedTLS as
-shipped in the ESP-IDF for AES-GCM, SHA-256 and Curve25519; NimBLE for the
-Bluetooth stack. The phone application is a web application using the Web
+shipped in the ESP-IDF for AES-GCM, SHA-256 and Curve25519; and the ESP32 BLE
+library bundled with the Arduino core, which runs on the Bluedroid stack, for
+Bluetooth. The phone application is a web application using the Web
 Bluetooth API, installable to the home screen and cached for offline use. Python
 is used for the protocol simulator and the host-side test suite.
 
@@ -827,12 +836,10 @@ HKDF is implemented over the available HMAC because the HKDF module is not
 enabled in the stock configuration; the implementation was checked against the
 test vectors in RFC 5869~\cite{rfc5869}.
 
-Board support required one thing that looks like an error and is not. PlatformIO
-has no board definition for the Wireless Stick Lite V3, so the build targets a
-sibling Heltec board carrying the identical ESP32-S3FN8. The pin assignments come
-from the project's own configuration header, not from the board definition, so
-this is correct; a comment in the configuration says so, to stop a future reader
-"fixing" it.
+The PlatformIO board definition is \texttt{heltec\_wifi\_lora\_32\_V3}, which
+matches the hardware directly. Pin assignments are nonetheless taken from the
+project's own configuration header rather than from the board definition, so
+that the alternate targets can be selected by changing a single macro.
 
 \section{Radio handling}
 \label{sec:lbt}
@@ -860,7 +867,7 @@ message path. On a device with limited RAM and no memory protection, a fixed
 ceiling that is reached and reported is better behaviour than an allocation that
 succeeds until the day it does not.
 
-The current firmware occupies roughly 19.5\% of available RAM and 32.8\% of flash
+The current firmware occupies roughly 19.6\% of available RAM and 33.6\% of flash
 on the primary target, and all three build targets compile without warnings.
 
 \section{Instrumentation}

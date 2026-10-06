@@ -42,7 +42,9 @@
   #define STATUS_LED 2
 
 #elif defined(BOARD_HELTEC_V3_OLED)
-  /* Heltec WiFi LoRa 32 V3 - ESP32-S3 + SX1262 with a 128x64 OLED */
+  /* Heltec WiFi LoRa 32 V3 - ESP32-S3FN8 + SX1262 with a 0.96" 128x64 OLED.
+   * This is the board we bought. The display shows local diagnostics; the
+   * phone is still the messaging interface.                                 */
   #define LORA_NSS   8
   #define LORA_DIO1  14
   #define LORA_RST   12
@@ -56,10 +58,18 @@
   #define OLED_RST   21
   #define OLED_VEXT  36
   #define STATUS_LED 35
+  /* Same divider as every other V3 board. These were missing from this branch
+   * until 2026-09-23, which silently disabled battery telemetry here, because
+   * metrics.h guards the ADC read with #if defined(BATTERY_ADC_PIN).         */
+  #define BATTERY_ADC_PIN 1
+  #define BATTERY_ADC_CTRL 37
 
 #else
-  /* Heltec Wireless Stick Lite V3 - ESP32-S3 + SX1262, no display.
-   * The phone is the user interface; the LED is the only local indicator.   */
+  /* Heltec V3 family with the display left undriven - fits the WiFi LoRa 32
+   * V3, the Wireless Stick V3 and the Stick Lite V3, which share this LoRa
+   * and battery pin map. Build this target to measure the OLED's current
+   * cost, or to keep a node running if its panel fails. The LED is then the
+   * only local indicator.                                                   */
   #define LORA_NSS   8
   #define LORA_DIO1  14
   #define LORA_RST   12

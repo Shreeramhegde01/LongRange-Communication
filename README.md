@@ -43,18 +43,33 @@ LoRaMeshProject/
 
 ## Hardware
 
+Full bill of materials, on-board chips, pin map and versions: [HARDWARE.md](HARDWARE.md).
+
 | Item | Choice | Per node |
 |---|---|---|
-| Board | **Heltec Wireless Stick Lite V3** (ESP32-S3 + SX1262), 863–870 MHz variant | 1 |
-| Antenna | 868 MHz SMA, ~3 dBi | 1 |
-| Battery | 3.7 V LiPo (the board has charging built in) | 1 |
+| Board | **Heltec WiFi LoRa 32 V3** (ESP32-S3FN8 + SX1262 + 0.96" OLED), 863–928 MHz variant | 1 |
+| Antenna | 868 MHz SMA, ~3 dBi, plus an IPEX (u.FL) to SMA pigtail | 1 |
+| Battery | 3.7 V LiPo with an **SH1.25-2** connector (the board has charging built in) | 1 |
 
-The Lite V3 has no display — the phone is the user interface, which saves cost and the
-~10–20 mA an OLED draws on a relay node nobody is looking at. An onboard LED pulses on
-message activity for local feedback.
+The board's 0.96" 128×64 OLED shows link quality and node state, which is useful during
+range trials when you have walked away from a node with no phone attached. The phone
+remains the messaging interface. An onboard LED also pulses on message activity.
 
-Two alternate targets are supported without code changes: the **Heltec WiFi LoRa 32 V3**
-(same chipset plus a 128×64 OLED) and a generic **ESP32 DevKit + SX1276 (RA-01H)**.
+> The LoRa antenna goes on the **IPEX (u.FL)** connector, not the 2.4 GHz spring antenna
+> that is soldered on for WiFi and Bluetooth — hence the pigtail. Never power the board
+> with nothing on the LoRa connector.
+
+> The battery connector is **SH1.25-2** (1.25 mm pitch), *not* the more common JST-PH 2.0.
+> A JST-PH cell will not plug in without an adapter.
+
+The display-less **Wireless Stick Lite V3** was the original choice and the firmware still
+runs on it unchanged, but it is not sold in India in the 863–870 MHz band (only 470 MHz).
+Two alternate targets are supported without code changes: `heltec_v3_nodisplay` (this same
+board with the panel dark, for measuring what the OLED costs in current) and a generic
+**ESP32 DevKit + SX1276 (RA-01H)**.
+
+The board uses a **CP2102** USB-serial bridge. Windows may need the driver in
+`docs/CP210x_Windows_Drivers.zip` before the port appears.
 
 > Buy the **863–870 MHz** board variant. India's licence-exempt band is 865–867 MHz
 > (WPC GSR 564(E)); the firmware defaults to 866.0 MHz. Note that RA-02 modules are
@@ -65,7 +80,7 @@ Two alternate targets are supported without code changes: the **Heltec WiFi LoRa
 Requires the PlatformIO extension for VS Code, or the `pio` CLI.
 
 ```bash
-pio run                          # build the default Lite V3 target
+pio run                          # build the default WiFi LoRa 32 V3 target
 pio run -t upload                # flash over USB-C
 pio device monitor               # serial console at 115200
 ```

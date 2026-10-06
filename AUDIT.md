@@ -212,7 +212,7 @@ everyone else but neither endpoint's private key, so it cannot derive the sessio
 
 | Item | Decision |
 |---|---|
-| Radio | **SX1262** — 5 × Heltec Wireless Stick Lite V3. The `esp32dev_sx1276` target stays as a compiling alternate but is **out of scope, unwired and untested**. |
+| Radio | **SX1262** — 5 × Heltec WiFi LoRa 32 V3. The `esp32dev_sx1276` target stays as a compiling alternate but is **out of scope, unwired and untested**. |
 | Hardware | **None bought yet.** The explicit goal is to get the software right *before* purchase. Phase 3 therefore proves what is provable without a radio, and says so. |
 | Node count | **5** (matches the report). |
 | Report | **Changeable** — where §3.2 shows the report lagging the code, the report is updated, not the code. |
@@ -453,11 +453,12 @@ All figures below are **actual output**, reproduced by the commands shown.
 
 | Target | Result | Warnings |
 |---|---|---|
-| `heltec_wireless_stick_lite_v3` (SX1262, primary) | SUCCESS | 0 |
-| `heltec_wifi_lora_32_V3` (SX1262 + OLED) | SUCCESS | 0 |
+| `heltec_wifi_lora_32_V3` (SX1262 + OLED, primary) | SUCCESS | 0 |
+| `heltec_v3_nodisplay` (same board, panel dark) | SUCCESS | 0 |
 | `esp32dev_sx1276` (alternate, out of scope) | SUCCESS | 0 |
 
-RAM 19.5%, flash 32.8% on the primary target.
+RAM 19.6%, flash 33.6% on the primary target (`heltec_wifi_lora_32_V3`, OLED
+enabled). The same code with the display undriven is 19.5% / 32.8%.
 
 ### 8.2 Protocol and adversarial tests — `python sim/test_protocol.py`
 
