@@ -129,10 +129,13 @@ public:
      *  CAD leaves the radio in standby, so the caller either transmits at once
      *  or restarts the receiver.                                           */
     bool channelBusy() {
-        int state = radioChip.scanChannel();
-        radioState = RADIO_STATE_IDLE;
-        return state == RADIOLIB_LORA_DETECTED;
-    }
+    int state = radioChip.scanChannel();
+    portENTER_CRITICAL(&radioIrqMux);
+    radioIrqFired = false;
+    portEXIT_CRITICAL(&radioIrqMux);
+    radioState = RADIO_STATE_IDLE;
+    return state == RADIOLIB_LORA_DETECTED;
+}
 
     /*----------------------------------------------------------------------*/
     /*  Non-blocking transmit                                               */
