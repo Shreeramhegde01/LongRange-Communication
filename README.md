@@ -22,7 +22,9 @@ relay, ACK and self-healing layers but carried no security layer and no routing 
 ```
 LoRaMeshProject/
 ├── platformio.ini             # Build configuration (three board targets)
-├── app/                       # Installable Web Bluetooth phone client (PWA)
+├── LoRaMesh-Messenger.apk     # Pre-built standalone Android APK
+├── android-app/               # Native Android project (Capacitor + native BLE)
+├── app/                       # Web Bluetooth client (PWA) + offline serve.py
 ├── sim/mesh_sim.py            # 20-node protocol simulator
 ├── src/LoRaMesh/
 │   ├── LoRaMesh.ino           # Entry point, command handling, app callbacks
@@ -97,44 +99,64 @@ Before deploying, change `MESH_MASTER_KEY` in `src/LoRaMesh/config.h`. Generate 
 
 ## The phone app
 
-`app/` is a Web Bluetooth client, installable as a PWA — chat threads, a node list with
-signal and encryption status, delivery ticks, broadcast alerts, and a diagnostics pane
-exposing every command the firmware supports.
+The field messenger connects to any mesh node over BLE and provides chat threads, a peer list with signal and encryption status, delivery ticks, broadcast alerts, GPS location sharing, and a diagnostic console.
 
-### It works with no internet, but it has to be installed once
+There are three ways to run it:
 
-Talking to a node uses the Bluetooth radio only — no internet, no SIM, no cellular. But
-*loading* a web page needs a server, and browsers only permit Web Bluetooth over HTTPS
-(a `file://` page will not work).
+---
 
-So: host it once, install it once, then use it offline forever.
+### Option 1: Standalone Native Android APK (Recommended for Field Use)
 
+The native Android app in `android-app/` wraps the messenger using **Capacitor** and `@capacitor-community/bluetooth-le`. It talks directly to Android's native Bluetooth LE stack, eliminating all browser and internet dependencies (`file://` / WebView security restrictions).
+
+- **Zero setup / 100% offline**: Install the pre-built APK [`LoRaMesh-Messenger.apk`](LoRaMesh-Messenger.apk) directly onto your Android device (Android 7.0 through Android 15+).
+- **Permissions handled**: Seamlessly requests runtime `BLUETOOTH_SCAN`, `BLUETOOTH_CONNECT`, and fine location permissions.
+- **Persistent storage**: Chat history and known node names persist across app reboots.
+
+#### Quick Install via ADB:
 ```bash
-git init
-git add .
-git commit -m "Secure LoRa mesh"
-git remote add origin https://github.com/<user>/<repo>.git
-git push -u origin main
+adb install -r LoRaMesh-Messenger.apk
 ```
+*(Or transfer `LoRaMesh-Messenger.apk` to your phone via USB / file transfer and open it to install.)*
 
-Then on GitHub: **Settings → Pages → Source: Deploy from a branch → main → / (root)**.
-After a minute the app is at `https://<user>.github.io/<repo>/app/`.
+#### Building from Source:
+Requires **JDK 21** and the Android SDK (installed with Android Studio or CLI tools):
+```bash
+cd android-app
+npm install
+npx cap sync android
+# On Windows:
+.\android\gradlew.bat assembleDebug
+# On Linux/macOS:
+./android/gradlew assembleDebug
+```
+The output APK is generated at `android-app/android/app/build/outputs/apk/debug/app-debug.apk`.
 
-Open that in **Chrome on Android**, then use the browser menu's **Install app** /
-**Add to Home Screen**. A service worker caches everything on that first load, so from then
-on it launches from the home screen like a native app with no network of any kind. That is
-what makes it usable in the field.
+---
 
-Conversations are stored on the phone and survive closing the app — a messenger that forgets
-everything when you close it is not one you would carry anywhere. Only names are restored
-for known nodes; hop count, signal and session state are live facts and would be misleading
-if shown from a previous session, so those nodes appear as *not heard from yet*.
+### Option 2: Offline Laptop / Desktop Runner (`app/serve.py`)
 
-**iOS Safari does not support Web Bluetooth at all.** iPhone users need the Bluefy browser,
-or you would have to write a native app. Worth settling before the demo.
+If you want to use the app from a laptop (Windows, macOS, Linux) via Chrome or Edge:
+1. Connect your laptop's Bluetooth.
+2. Run the offline launcher script:
+   ```bash
+   python app/serve.py
+   ```
+This runs a lightweight local server on `http://localhost:8000` (which Chromium recognizes as a secure context for Web Bluetooth) and opens your browser automatically—no external internet connection required.
 
-If you later need iOS or a Play Store build, the alternative is a native app talking to the
-same Nordic UART service — the firmware side would not change at all.
+---
+
+### Option 3: Web Bluetooth PWA (Hosted Once, Used Offline)
+
+`app/` can also be hosted on GitHub Pages and installed as a Progressive Web App (PWA):
+
+1. On GitHub: **Settings → Pages → Source: Deploy from a branch → main → / (root)**.
+2. The app will be available at `https://<user>.github.io/<repo>/app/`.
+3. Open the link in **Chrome on Android**, then tap **Install app** / **Add to Home Screen**. The service worker caches all assets for offline use.
+
+> **Note on iOS**: Safari on iOS does not support Web Bluetooth. iPhone users must use the **Bluefy** browser from the App Store.
+
+---
 
 ## Messages survive an absent recipient
 
