@@ -23,3 +23,5 @@
 *.synctex.gz
 *.fls
 *.fdb_latexmk
+
+**/compile_commands.json
